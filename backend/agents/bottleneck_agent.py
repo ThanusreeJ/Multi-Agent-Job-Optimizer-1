@@ -147,29 +147,29 @@ class BottleneckAgent:
             load_str = ", ".join([f"{k}: {v} min" for k,v in loads.items()])
             prompt = ChatPromptTemplate.from_template(
                 """
-You are a Bottleneck Analysis & Load Balancing Agent. Provide a DETAILED explanation:
+You are a Bottleneck Analysis & Load Balancing Agent for pharmaceutical production. Provide a DETAILED explanation:
 
 BOTTLENECK AGENT ANALYSIS:
 
 Load Distribution:
 - Current machine loads: {load_str}
 - Bottleneck machine: {bottleneck}
-- Load balance quality: Evaluate variance
+- Load balance quality: Evaluate variance across production lines
 
 Bottleneck Mitigation:
-- How jobs were distributed to avoid overloading specific machines
+- How pharmaceutical jobs were distributed to avoid overloading specific production lines
 - Identify underutilized machines  
 
 Resource Optimization:
 - Machines at capacity vs available time
-- Overall utilization rate
+- Overall utilization rate for pharmaceutical production
 
 IMPLEMENTATION:
 - Makespan: {makespan} minutes
 - Load balancing strategy applied
 
 RESULT:
-- Load balanced across machines
+- Load balanced across pharmaceutical production lines
 - Bottlenecks minimized
                 """
             )

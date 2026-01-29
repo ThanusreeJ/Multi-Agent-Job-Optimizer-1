@@ -111,12 +111,13 @@ class BaselineAgent(BaseAgent):
         violations.extend(constraint_violations)
         
         explanation = f"""
-BASELINE AGENT (FCFS):
+BASELINE AGENT (FCFS - Pharmaceutical Production):
 
 Strategy:
-- First-Come-First-Served scheduling
-- Jobs processed in order received
-- No optimization applied
+- First-Come-First-Served scheduling for medication production
+- Rush orders (urgent pharmaceutical orders) prioritized first
+- Jobs processed in order received after rush orders
+- No advanced optimization applied
 
 Results:
 - Scheduled: {kpis.completed_jobs}/{len(jobs)} jobs
@@ -127,10 +128,10 @@ Results:
 Performance:
 - Violations: {len(violations)} issues
 - Unassigned jobs: {unassigned_count}
-- Simple first-in-first-out approach
-- Setup penalty (10 min) applied for product changes
+- Simple priority-based FCFS approach
+- Equipment setup/cleaning penalty (10 min) applied for pharmaceutical product changes
 
-This baseline provides a reference point for AI optimization strategies.
+This baseline provides a reference point for AI optimization strategies in pharmaceutical manufacturing.
 """
         
         return AgentResult(

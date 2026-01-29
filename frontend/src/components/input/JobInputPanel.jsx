@@ -5,12 +5,13 @@ import { dataService } from '../../services/api';
 const JobInputPanel = ({ mode, jobs, setJobs }) => {
     const [loading, setLoading] = useState(false);
     const [jobCount, setJobCount] = useState(20);
+    const [machineCount, setMachineCount] = useState(4);
     const [rushProb, setRushProb] = useState(20); // Percentage
 
     const handleRandomGen = async () => {
         setLoading(true);
         try {
-            const res = await dataService.generateRandomData(jobCount, rushProb / 100, 0);
+            const res = await dataService.generateRandomData(jobCount, rushProb / 100, 0, machineCount);
             setJobs(res.data.jobs);
         } catch (err) {
             alert("Error generating data: " + err.message);
@@ -58,6 +59,16 @@ const JobInputPanel = ({ mode, jobs, setJobs }) => {
                             />
                         </div>
                         <div className="flex-row justify-between">
+                            <label className="text-sm text-muted">Machine Count:</label>
+                            <input
+                                type="number"
+                                className="input-field"
+                                style={{ width: '80px', padding: '0.25rem' }}
+                                value={machineCount}
+                                onChange={(e) => setMachineCount(parseInt(e.target.value) || 0)}
+                            />
+                        </div>
+                        <div className="flex-row justify-between">
                             <label className="text-sm text-muted">Rush order (%):</label>
                             <input
                                 type="number"
@@ -74,25 +85,39 @@ const JobInputPanel = ({ mode, jobs, setJobs }) => {
                 )}
 
                 {mode === 'industry' && (
-                    <div style={{ position: 'relative' }}>
-                        <input
-                            type="file"
-                            accept=".csv"
-                            onChange={handleFileUpload}
-                            style={{ opacity: 0, position: 'absolute', width: '100%', height: '100%', cursor: 'pointer' }}
-                        />
-                        <button className="btn-secondary w-full flex-row justify-center">
-                            <Upload size={18} /> Upload CSV
-                        </button>
-                        <p className="text-xs text-muted mt-4 text-center">
-                            Format: job_id, product, duration, deadline, priority, compatible_machines
-                        </p>
+                    <div>
+                        <div style={{ position: 'relative' }}>
+                            <input
+                                type="file"
+                                accept=".csv"
+                                onChange={handleFileUpload}
+                                style={{ opacity: 0, position: 'absolute', width: '100%', height: '100%', cursor: 'pointer' }}
+                            />
+                            <button className="btn-secondary w-full flex-row justify-center">
+                                <Upload size={18} /> Upload Jobs CSV
+                            </button>
+                        </div>
+                        <div className="mt-3 p-3" style={{ background: 'rgba(59, 130, 246, 0.1)', borderRadius: '4px', border: '1px solid rgba(59, 130, 246, 0.3)' }}>
+                            <p className="text-xs font-bold mb-2">CSV Format Required:</p>
+                            <p className="text-xs text-muted mb-1">• <strong>All columns required:</strong> job_id, product_type, machine_options, processing_time, priority, due_time</p>
+                            <p className="text-xs text-muted mb-1">• machine_options: semicolon-separated (e.g., M1;M2;M4)</p>
+                            <p className="text-xs text-muted mb-1">• priority: Rush or Normal</p>
+                            <p className="text-xs text-muted mb-1">• due_time: HH:MM format (e.g., 11:30)</p>
+                            <p className="text-xs text-muted">• Example: J001,Paracetamol_500mg,M1;M2;M4,45,Rush,11:30</p>
+                        </div>
                     </div>
                 )}
 
                 {/* Preview List */}
                 {jobs.length > 0 && (
                     <div style={{ maxHeight: '300px', overflowY: 'auto' }} className="industrial-card p-4">
+                        <button
+                            className="btn-secondary w-full mb-2"
+                            style={{ fontSize: '0.9rem', padding: '0.5rem 1rem' }}
+                            onClick={() => window.dispatchEvent(new CustomEvent('openJobModal'))}
+                        >
+                            Expand Full Table
+                        </button>
                         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.8rem' }}>
                             <thead>
                                 <tr className="text-muted" style={{ textAlign: 'left' }}>

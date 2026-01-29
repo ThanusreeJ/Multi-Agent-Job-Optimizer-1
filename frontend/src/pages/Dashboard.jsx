@@ -6,12 +6,14 @@ import { dataService, optimizeService, simulationService } from '../services/api
 // Components (will be implemented)
 import JobInputPanel from '../components/input/JobInputPanel';
 import DowntimePanel from '../components/input/DowntimePanel';
+import DowntimeInputModal from '../components/input/DowntimeInputModal';
 import OptimizationPanel from '../components/control/OptimizationPanel';
 import GanttChart from '../components/output/GanttChart';
 import KPISummary from '../components/output/KPISummary';
 import ExplanationPanel from '../components/output/ExplanationPanel';
 import ComparisonTable from '../components/output/ComparisonTable';
 import ConstraintReport from '../components/output/ConstraintReport';
+import JobInputModal from '../components/input/JobInputModal';
 
 import JobAllocationTable from '../components/output/JobAllocationTable';
 
@@ -20,31 +22,37 @@ const Dashboard = () => {
     const [mode, setMode] = useState('poc');
     const [jobs, setJobs] = useState([]);
     const [downtimes, setDowntimes] = useState([]);
+    const [downtimeModalOpen, setDowntimeModalOpen] = useState(false);
     const [scheduleResult, setScheduleResult] = useState(null); // Single agent result
     const [comparisonResult, setComparisonResult] = useState(null); // Comparison result
     const [viewMode, setViewMode] = useState('single'); // 'single' or 'compare'
     const [loading, setLoading] = useState(false);
     const [activeAgent, setActiveAgent] = useState('baseline');
+    const [sidebarExpanded, setSidebarExpanded] = useState(false);
+    const [jobModalOpen, setJobModalOpen] = useState(false);
 
     useEffect(() => {
         const storedMode = localStorage.getItem('optimizer_mode');
         if (storedMode) setMode(storedMode);
+
+        const handler = () => setJobModalOpen(true);
+        window.addEventListener('openJobModal', handler);
+        return () => window.removeEventListener('openJobModal', handler);
     }, []);
 
-    const handleSimulate = async () => {
-        try {
-            const payload = {
-                jobs,
-                downtimes,
-                shift: { start_time: "08:00", end_time: "16:00" }
-            };
-            // Simulate on M1 for POC
-            const res = await simulationService.simulateFailure(payload, 'M1');
-            setDowntimes(res.data.downtimes);
-            alert("Machine failure simulated on M1! Re-run optimization to see adaptation.");
-        } catch (err) {
-            alert("Simulation failed: " + err.message);
-        }
+    const handleAddDowntime = (downtimeData) => {
+        // Add the new downtime to existing downtimes
+        setDowntimes([...downtimes, downtimeData]);
+        alert(`Machine failure added on ${downtimeData.machine_id} (${downtimeData.start_time} - ${downtimeData.end_time}). Re-run optimization to see impact.`);
+    };
+
+    const getAvailableMachines = () => {
+        // Get unique machines from jobs
+        const machines = new Set();
+        jobs.forEach(job => {
+            job.machine_options.forEach(m => machines.add(m));
+        });
+        return Array.from(machines).sort();
     };
 
     const handleOptimization = async (agentType) => {
@@ -100,9 +108,19 @@ const Dashboard = () => {
                 </div>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '350px 1fr', gap: '2rem', height: 'calc(100vh - 100px)' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: sidebarExpanded ? '1fr' : '350px 1fr', gap: '2rem', height: 'calc(100vh - 100px)' }}>
                 {/* Left Column: Inputs */}
-                <div className="flex-col" style={{ overflowY: 'auto', paddingRight: '0.5rem' }}>
+                <div className="flex-col" style={{ overflowY: 'auto', paddingRight: '0.5rem', width: sidebarExpanded ? '100%' : '350px', transition: 'width 0.3s' }}>
+                    <div className="flex-row justify-between mb-2">
+                        <h3>Input Panels</h3>
+                        <button
+                            className="btn-secondary"
+                            style={{ fontSize: '0.8rem', padding: '0.5rem 1rem' }}
+                            onClick={() => setSidebarExpanded(e => !e)}
+                        >
+                            {sidebarExpanded ? 'Collapse' : 'Expand'}
+                        </button>
+                    </div>
                     <JobInputPanel
                         mode={mode}
                         jobs={jobs}
@@ -112,6 +130,7 @@ const Dashboard = () => {
                         mode={mode}
                         downtimes={downtimes}
                         setDowntimes={setDowntimes}
+                        jobs={jobs}
                     />
                 </div>
 
@@ -120,7 +139,7 @@ const Dashboard = () => {
                     {/* Control Panel */}
                     <OptimizationPanel
                         onRun={handleOptimization}
-                        onSimulate={handleSimulate}
+                        onOpenDowntimeModal={() => setDowntimeModalOpen(true)}
                         loading={loading}
                         disabled={!verifyData()}
                         activeAgent={activeAgent}
@@ -161,6 +180,21 @@ const Dashboard = () => {
                     )}
                 </div>
             </div>
+
+            {/* Downtime Input Modal */}
+            <DowntimeInputModal
+                isOpen={downtimeModalOpen}
+                onClose={() => setDowntimeModalOpen(false)}
+                onSubmit={handleAddDowntime}
+                availableMachines={getAvailableMachines()}
+            />
+
+            {/* Job Intake Modal */}
+            <JobInputModal
+                isOpen={jobModalOpen}
+                onClose={() => setJobModalOpen(false)}
+                jobs={jobs}
+            />
         </div>
     );
 };

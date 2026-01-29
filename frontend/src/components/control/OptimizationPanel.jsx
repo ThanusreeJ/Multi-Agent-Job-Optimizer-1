@@ -2,20 +2,7 @@ import React, { useState } from 'react';
 import { Play, Activity, Layers, GitMerge, BarChart2, Zap } from 'lucide-react';
 import { simulationService } from '../../services/api';
 
-const OptimizationPanel = ({ onRun, onSimulate, loading, disabled, activeAgent, viewMode }) => {
-    const [simulationLoading, setSimulationLoading] = useState(false);
-
-    const handleSimulateFailure = async () => {
-        setSimulationLoading(true);
-        try {
-            await onSimulate();
-        } catch (e) {
-            console.error(e);
-        } finally {
-            setSimulationLoading(false);
-        }
-    };
-
+const OptimizationPanel = ({ onRun, onOpenDowntimeModal, loading, disabled, activeAgent, viewMode }) => {
     const agents = [
         { id: 'baseline', name: 'Baseline (FCFS)', icon: Play, desc: 'Simple FIFO scheduler' },
         { id: 'batching', name: 'Batching (AI)', icon: Layers, desc: 'Minimizes setup times' },
@@ -64,8 +51,8 @@ const OptimizationPanel = ({ onRun, onSimulate, loading, disabled, activeAgent, 
             <button
                 className="btn-secondary"
                 style={{ borderColor: 'var(--status-error)', color: 'var(--status-error)' }}
-                onClick={handleSimulateFailure}
-                disabled={disabled || simulationLoading}
+                onClick={onOpenDowntimeModal}
+                disabled={disabled}
             >
                 <div className="flex-row" style={{ gap: '0.5rem' }}>
                     <Zap size={16} /> Simulate Failure

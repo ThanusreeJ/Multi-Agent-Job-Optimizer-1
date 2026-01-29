@@ -2,18 +2,24 @@ import React, { useState } from 'react';
 import { Clock, AlertTriangle, Upload } from 'lucide-react';
 import { dataService } from '../../services/api';
 
-const DowntimePanel = ({ mode, downtimes, setDowntimes }) => {
+const DowntimePanel = ({ mode, downtimes, setDowntimes, jobs }) => {
     const [loading, setLoading] = useState(false);
     const [dtCount, setDtCount] = useState(1);
+
+    const getMachineCount = () => {
+        // Get unique machines from jobs
+        const machines = new Set();
+        jobs.forEach(job => {
+            job.machine_options.forEach(m => machines.add(m));
+        });
+        return machines.size || 4; // Default to 4 if no jobs loaded
+    };
 
     const handleRandomDowntime = async () => {
         setLoading(true);
         try {
-            const res = await dataService.generateDowntime(dtCount);
-            // Append or replace? Usually explicit gen implies replace or append. 
-            // In POC mode, maybe replace is cleaner, or append if user wants more.
-            // Let's Append to existing for flexibility, or replace if empty.
-            // Actually, for clear POC flow, let's Append.
+            const machineCount = getMachineCount();
+            const res = await dataService.generateDowntime(dtCount, machineCount);
             setDowntimes(prev => [...prev, ...res.data]);
         } catch (err) {
             alert("Error generating downtime: " + err.message);
@@ -71,16 +77,24 @@ const DowntimePanel = ({ mode, downtimes, setDowntimes }) => {
             )}
 
             {mode === 'industry' && (
-                <div style={{ position: 'relative', marginBottom: '1rem' }}>
-                    <input
-                        type="file"
-                        accept=".csv"
-                        onChange={handleFileUpload}
-                        style={{ opacity: 0, position: 'absolute', width: '100%', height: '100%', cursor: 'pointer' }}
-                    />
-                    <button className="btn-secondary w-full flex-row justify-center">
-                        <Upload size={16} /> Upload Downtime CSV
-                    </button>
+                <div>
+                    <div style={{ position: 'relative', marginBottom: '1rem' }}>
+                        <input
+                            type="file"
+                            accept=".csv"
+                            onChange={handleFileUpload}
+                            style={{ opacity: 0, position: 'absolute', width: '100%', height: '100%', cursor: 'pointer' }}
+                        />
+                        <button className="btn-secondary w-full flex-row justify-center">
+                            <Upload size={16} /> Upload Downtime CSV
+                        </button>
+                    </div>
+                    <div className="p-3" style={{ background: 'rgba(234, 179, 8, 0.1)', borderRadius: '4px', border: '1px solid rgba(234, 179, 8, 0.3)' }}>
+                        <p className="text-xs font-bold mb-2">CSV Format Required:</p>
+                        <p className="text-xs text-muted mb-1">• machine_id, start_time (HH:MM), end_time (HH:MM)</p>
+                        <p className="text-xs text-muted mb-1">• Optional: reason (e.g., Equipment Cleaning)</p>
+                        <p className="text-xs text-muted">• Example: M2,10:30,11:00,Quality Calibration</p>
+                    </div>
                 </div>
             )}
 

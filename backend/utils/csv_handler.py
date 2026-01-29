@@ -6,12 +6,12 @@ from models.schemas import Job, MachineDowntime, JobPriority
 def parse_jobs_csv(file_content: bytes) -> List[Job]:
     try:
         df = pd.read_csv(BytesIO(file_content))
-        required_cols = ["job_id", "product_type", "machine_options", "processing_time"]
+        required_cols = ["job_id", "product_type", "machine_options", "processing_time", "priority", "due_time"]
         
         # Check columns
         missing = [col for col in required_cols if col not in df.columns]
         if missing:
-            raise ValueError(f"Missing columns: {', '.join(missing)}")
+            raise ValueError(f"Missing required columns: {', '.join(missing)}")
             
         jobs = []
         for _, row in df.iterrows():
@@ -20,14 +20,15 @@ def parse_jobs_csv(file_content: bytes) -> List[Job]:
             if isinstance(machines, str):
                 machines = [m.strip() for m in machines.split(';')] # Semicolon separated in CSV preferably
             
-            # Handle priority if exists
+            # Priority is now required
             priority = JobPriority.NORMAL
-            if "priority" in df.columns and str(row["priority"]).lower() == "rush":
+            if str(row["priority"]).lower() == "rush":
                 priority = JobPriority.RUSH
                 
-            due_time = None
-            if "due_time" in df.columns and pd.notna(row["due_time"]):
-                due_time = str(row["due_time"])
+            # Due time is now required
+            if pd.isna(row["due_time"]):
+                raise ValueError(f"Job {row['job_id']} missing required due_time")
+            due_time = str(row["due_time"])
 
             job = Job(
                 job_id=str(row["job_id"]),

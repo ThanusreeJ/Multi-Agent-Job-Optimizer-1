@@ -9,6 +9,19 @@ const GanttChart = ({ schedules, downtimes }) => {
     const END_HOUR = 18; // Allow some overtime view
     const TOTAL_MINUTES = (END_HOUR - START_HOUR) * 60;
 
+    // Pharma product color mapping
+    const PRODUCT_COLORS = {
+        'Paracetamol_500mg': '#3b82f6',    // Blue
+        'Ibuprofen_400mg': '#10b981',       // Green
+        'Amoxicillin_250mg': '#f59e0b',     // Amber
+        'Aspirin_75mg': '#ec4899',          // Pink
+        'Metformin_500mg': '#8b5cf6',       // Purple
+    };
+
+    const getProductColor = (productType) => {
+        return PRODUCT_COLORS[productType] || '#06b6d4'; // Cyan as fallback
+    };
+
     const timeToPercent = (timeStr) => {
         const [h, m] = timeStr.split(':').map(Number);
         const mins = (h - START_HOUR) * 60 + m;
@@ -50,7 +63,7 @@ const GanttChart = ({ schedules, downtimes }) => {
                                         width: `${durationToPercent(job.start_time, job.end_time)}%`,
                                         height: '80%',
                                         top: '10%',
-                                        backgroundColor: job.is_setup ? 'var(--text-secondary)' : (job.product_type === 'P_A' ? '#3b82f6' : job.product_type === 'P_B' ? '#06b6d4' : '#8b5cf6'),
+                                        backgroundColor: job.is_setup ? 'var(--text-secondary)' : getProductColor(job.product_type),
                                         borderRadius: '3px',
                                         fontSize: '0.7rem',
                                         display: 'flex',
@@ -91,9 +104,11 @@ const GanttChart = ({ schedules, downtimes }) => {
 
             {/* Legend */}
             <div className="flex-row mt-4 text-xs justify-center">
-                <div className="flex-row" style={{ gap: '0.5rem' }}><span style={{ width: 10, height: 10, background: '#3b82f6', display: 'inline-block' }}></span> Product A</div>
-                <div className="flex-row" style={{ gap: '0.5rem' }}><span style={{ width: 10, height: 10, background: '#06b6d4', display: 'inline-block' }}></span> Product B</div>
-                <div className="flex-row" style={{ gap: '0.5rem' }}><span style={{ width: 10, height: 10, background: '#8b5cf6', display: 'inline-block' }}></span> Other</div>
+                <div className="flex-row" style={{ gap: '0.5rem' }}><span style={{ width: 10, height: 10, background: '#3b82f6', display: 'inline-block' }}></span> Paracetamol</div>
+                <div className="flex-row" style={{ gap: '0.5rem' }}><span style={{ width: 10, height: 10, background: '#10b981', display: 'inline-block' }}></span> Ibuprofen</div>
+                <div className="flex-row" style={{ gap: '0.5rem' }}><span style={{ width: 10, height: 10, background: '#f59e0b', display: 'inline-block' }}></span> Amoxicillin</div>
+                <div className="flex-row" style={{ gap: '0.5rem' }}><span style={{ width: 10, height: 10, background: '#ec4899', display: 'inline-block' }}></span> Aspirin</div>
+                <div className="flex-row" style={{ gap: '0.5rem' }}><span style={{ width: 10, height: 10, background: '#8b5cf6', display: 'inline-block' }}></span> Metformin</div>
                 <div className="flex-row" style={{ gap: '0.5rem' }}><span style={{ width: 10, height: 10, background: 'repeating-linear-gradient(45deg, #334155, #334155 5px, #1e293b 5px, #1e293b 10px)', display: 'inline-block' }}></span> Downtime</div>
             </div>
         </div>

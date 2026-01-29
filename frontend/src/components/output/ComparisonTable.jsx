@@ -41,6 +41,14 @@ const ComparisonTable = ({ data, onSelectAgent }) => {
                         {agents.map(a => <td key={a} className="p-4">{getAgentRes(a).kpis.total_tardiness}</td>)}
                     </tr>
                     <tr style={{ borderBottom: '1px solid var(--border-color)' }}>
+                        <td className="p-4">Product Switches</td>
+                        {agents.map(a => <td key={a} className="p-4">{getAgentRes(a).kpis.product_switches || 0}</td>)}
+                    </tr>
+                    <tr style={{ borderBottom: '1px solid var(--border-color)' }}>
+                        <td className="p-4">Load Balance Variance</td>
+                        {agents.map(a => <td key={a} className="p-4">{getAgentRes(a).kpis.load_balance_variance?.toFixed(1) || 'N/A'}</td>)}
+                    </tr>
+                    <tr style={{ borderBottom: '1px solid var(--border-color)' }}>
                         <td className="p-4">Violations</td>
                         {agents.map(a => {
                             const v = getAgentRes(a).violations.length;

@@ -3,30 +3,52 @@ from datetime import datetime, timedelta
 from typing import List
 from .schemas import Job, JobPriority, MachineDowntime
 
-# Product types with specific characteristics
-PRODUCT_TYPES = ["P_A", "P_B", "P_C"]
-MACHINES = ["M1", "M2", "M3", "M4"]
+# PHARMA PRODUCT TYPES (Tablets/Medications)
+PRODUCT_TYPES = [
+    "Paracetamol_500mg",
+    "Ibuprofen_400mg",
+    "Amoxicillin_250mg",
+    "Aspirin_75mg",
+    "Metformin_500mg"
+]
 
-# Machine compatibility matrix (which machines can produce which products)
-MACHINE_CAPABILITIES = {
-    "M1": ["P_A", "P_B"],
-    "M2": ["P_A", "P_C"],
-    "M3": ["P_B", "P_C"],
-    "M4": ["P_A", "P_B", "P_C"]
-}
-
-def generate_random_jobs(count: int = 20, rush_probability: float = 0.2) -> List[Job]:
+def generate_machine_capabilities(num_machines: int):
     """
-    Generate jobs in format: job_id, product, duration, deadline, priority, compatible_machines
+    Generate machine capability matrix dynamically based on number of machines.
+    Each machine can produce 2-4 different products.
+    """
+    capabilities = {}
+    for i in range(num_machines):
+        machine_id = f"M{i+1}"
+        # Each machine can produce 2-4 random products
+        num_products = random.randint(2, min(4, len(PRODUCT_TYPES)))
+        capabilities[machine_id] = random.sample(PRODUCT_TYPES, num_products)
+    
+    # Ensure all products can be made by at least one machine
+    for product in PRODUCT_TYPES:
+        if not any(product in caps for caps in capabilities.values()):
+            random_machine = f"M{random.randint(1, num_machines)}"
+            if product not in capabilities[random_machine]:
+                capabilities[random_machine].append(product)
+    
+    return capabilities
+
+def generate_random_jobs(count: int = 20, rush_probability: float = 0.2, num_machines: int = 4) -> List[Job]:
+    """
+    Generate pharma production jobs with dynamic machine count.
+    Format: job_id, product, duration, deadline, priority, compatible_machines
     """
     jobs = []
     base_time = datetime.now().replace(hour=8, minute=0, second=0, microsecond=0)
+    
+    # Generate machine capabilities dynamically
+    MACHINE_CAPABILITIES = generate_machine_capabilities(num_machines)
     
     for i in range(count):
         # Job ID
         job_id = f"J{i+1:03d}"
         
-        # Product type (P_A, P_B, P_C)
+        # Product type (Pharma tablets)
         product = random.choice(PRODUCT_TYPES)
         
         # Duration (processing time) based on product type
@@ -72,11 +94,17 @@ def generate_random_jobs(count: int = 20, rush_probability: float = 0.2) -> List
     
     return jobs
 
-def generate_random_downtime(count: int = 1) -> List[MachineDowntime]:
+def generate_random_downtime(count: int = 1, num_machines: int = 4) -> List[MachineDowntime]:
+    """
+    Generate random machine downtime events for pharma production.
+    """
     downtimes = []
+    # Generate machine list dynamically
+    machines = [f"M{i+1}" for i in range(num_machines)]
+    
     # Generate requested number of downtime events
     for _ in range(count):
-        machine = random.choice(MACHINES)
+        machine = random.choice(machines)
         # Random start between 9 AM and 2 PM
         start_hour = random.randint(9, 14)
         start_min = random.choice([0, 15, 30, 45])
@@ -89,6 +117,6 @@ def generate_random_downtime(count: int = 1) -> List[MachineDowntime]:
             machine_id=machine,
             start_time=start_dt.strftime("%H:%M"),
             end_time=end_dt.strftime("%H:%M"),
-            reason=random.choice(["Maintenance", "Tool Breakage", "Calibration"])
+            reason=random.choice(["Maintenance", "Equipment Cleaning", "Quality Calibration", "Sterilization"])
         ))
     return downtimes

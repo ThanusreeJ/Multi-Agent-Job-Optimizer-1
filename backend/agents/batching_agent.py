@@ -150,27 +150,27 @@ class BatchingAgent(BaseAgent):
         try:
             prompt = ChatPromptTemplate.from_template(
                 """
-You are a Batching & Setup Minimization Agent. Provide a DETAILED explanation following this exact format:
+You are a Batching & Setup Minimization Agent for a pharmaceutical production facility. Provide a DETAILED explanation following this exact format:
 
 BATCHING AGENT RECOMMENDATIONS:
 
 Batching Strategy:
 - Identify Rush Jobs: List all rush jobs with their product types and deadlines
-- Batching Groups: Group jobs by product type (P_A, P_B, P_C, etc.)
+- Batching Groups: Group jobs by pharmaceutical product (Paracetamol, Ibuprofen, Amoxicillin, Aspirin, Metformin)
 - Sequence Priority: Explain the order (rush first, then by product type, then deadline)
 
 Setup Optimization:
-- Explain how jobs were grouped to minimize setup changes
-- Specify setup time savings achieved
-- Mention product type transitions
+- Explain how pharmaceutical jobs were grouped to minimize equipment setup/cleaning changes
+- Specify setup time savings achieved (changeover between different medications)
+- Mention product type transitions and equipment preparation
 
 Recommended Sequence:
-- List the actual job sequence with product types
+- List the actual job sequence with pharmaceutical product types
 - Mark rush jobs clearly
 - Show the logical flow
 
 IMPLEMENTATION:
-- Number of product types grouped
+- Number of pharmaceutical product types grouped
 - Number of rush jobs prioritized  
 - Total jobs scheduled: {completed} / {total}
 - Total setup time: {setup_time} minutes

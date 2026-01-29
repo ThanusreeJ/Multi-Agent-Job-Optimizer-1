@@ -99,12 +99,12 @@ class OrchestratorAgent(BaseAgent):
             summary = "\n".join([f"{c.agent_name}: Score {c.kpis.score}, Violations {len(c.violations)}" for c in candidates])
             prompt = ChatPromptTemplate.from_template(
                 """
-                You are a Production Supervisor.
-                We compared 3 scheduling strategies:
+                You are a Pharmaceutical Production Supervisor.
+                We compared 3 scheduling strategies for pharmaceutical manufacturing:
                 {summary}
                 
                 The winner is {winner}.
-                Explain why this strategy was chosen over the others. fast and concise.
+                Explain why this strategy was chosen over the others for pharmaceutical production optimization. Be concise and focus on production efficiency.
                 """
             )
             chain = prompt | self.llm

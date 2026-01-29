@@ -10,9 +10,9 @@ const api = axios.create({
 });
 
 export const dataService = {
-    generateRandomData: (count = 20, rushProb = 0.2, downtimeCount = 0) =>
-        api.post(`/data/generate-random?job_count=${count}&rush_prob=${rushProb}&downtime_count=${downtimeCount}`),
-    generateDowntime: (count = 1) => api.post(`/data/generate-downtime?count=${count}`),
+    generateRandomData: (count = 20, rushProb = 0.2, downtimeCount = 0, machineCount = 4) =>
+        api.post(`/data/generate-random?job_count=${count}&rush_prob=${rushProb}&downtime_count=${downtimeCount}&machine_count=${machineCount}`),
+    generateDowntime: (count = 1, machineCount = 4) => api.post(`/data/generate-downtime?count=${count}&machine_count=${machineCount}`),
     uploadJobs: (formData) => api.post('/data/upload-jobs', formData, {
         headers: { 'Content-Type': 'multipart/form-data' }
     }),
