@@ -1,0 +1,47 @@
+services:
+  # Backend Service (Development Mode with Hot Reload)
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: job-optimizer-backend-dev
+    ports:
+      - "8000:8000"
+    environment:
+      - GROQ_API_KEY=${GROQ_API_KEY}
+      - LANGSMITH_API_KEY=${LANGSMITH_API_KEY:-}
+      - LANGSMITH_PROJECT=${LANGSMITH_PROJECT:-multi-agent-job-optimizer}
+      - LANGCHAIN_TRACING_V2=${LANGCHAIN_TRACING_V2:-true}
+    env_file:
+      - ./backend/.env
+    volumes:
+      - ./backend:/app
+      - /app/__pycache__
+    command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+    restart: unless-stopped
+    networks:
+      - app-network
+
+  # Frontend Service (Development Mode with Vite Dev Server)
+  frontend-dev:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.dev
+    container_name: job-optimizer-frontend-dev
+    ports:
+      - "5173:5173"
+    environment:
+      - VITE_API_URL=http://localhost:8000
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    command: npm run dev -- --host
+    depends_on:
+      - backend
+    restart: unless-stopped
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge
