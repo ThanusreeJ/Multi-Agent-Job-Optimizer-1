@@ -45,30 +45,37 @@ class OrchestratorAgent(BaseAgent):
         for res in results:
             res.violations = self.constraint.validate(res.schedules, jobs, downtimes, constraints)
             
-        # Select Best
-        # Scoring logic: High Score is better. If violations exist, penalize heavily.
+        # --- SUPERVISOR AGENT LOGIC ---
+        # "Consolidates candidate schedules and chooses the best one using KPI-driven scoring."
+        
         candidates = [baseline_res, batching_res, bottleneck_res]
         
+        # 1. Scoring & Selection (Supervisor Rules)
         best_agent = None
         best_score = -float('inf')
         
+        self.log("Supervisor: Evaluating candidates...")
+        
         for cand in candidates:
-            # Penalty for violations
-            penalty = len(cand.violations) * 50
-            final_score = cand.kpis.score - penalty
+            # Supervisor Rule: Prioritize Zero Violations
+            violation_penalty = len(cand.violations) * 100 
+             # Supervisor Rule: Weighted KPI Formula (handled in kpi_calculator, but we adjust for decision)
+            final_score = cand.kpis.score - violation_penalty
+            
+            self.log(f"Candidate {cand.agent_name}: KPI Score={cand.kpis.score:.2f}, Violations={len(cand.violations)}, Final Selection Score={final_score:.2f}")
             
             if final_score > best_score:
                 best_score = final_score
                 best_agent = cand
         
-        # Generate Meta-Explanation
-        explanation = await self._generate_meta_explanation(best_agent, candidates)
+        # 2. Generate Supervisor Explanation
+        # "Generates clear, non-technical explanations for plant managers"
         
-        # Return the best result, but we might want to attach the comparison data elsewhere
-        # usage: The API will likely call a specific 'compare' method if it wants all data.
-        # optimize() returns just the single best result to fit the interface.
+        self.log(f"Supervisor: Selected {best_agent.agent_name} as optimal strategy.")
         
-        best_agent.explanation = f"[Orchestrated Selection] Selected {best_agent.agent_name} as optimal strategy.\n\n" + explanation
+        supervisor_explanation = await self._generate_supervisor_explanation(best_agent, candidates)
+        
+        best_agent.explanation = supervisor_explanation
         return best_agent
 
     async def compare_all(self, jobs, downtimes, constraints) -> ComparisonResponse:
@@ -82,8 +89,7 @@ class OrchestratorAgent(BaseAgent):
         for res in results:
             res.violations = self.constraint.validate(res.schedules, jobs, downtimes, constraints)
             
-        # Run Orchestrator logic to get "Its own" view (or just pick best)
-        # We can treat the 'Orchestrated' result as the Decision Wrapper
+        # Run Supervisor Selection logic
         best_res = await self.optimize(jobs, downtimes, constraints)
         
         return ComparisonResponse(
@@ -94,17 +100,35 @@ class OrchestratorAgent(BaseAgent):
             summary=best_res.explanation
         )
 
-    async def _generate_meta_explanation(self, best, candidates):
+    async def _generate_supervisor_explanation(self, best, candidates):
         try:
-            summary = "\n".join([f"{c.agent_name}: Score {c.kpis.score}, Violations {len(c.violations)}" for c in candidates])
+            summary = "\n".join([
+                f"- {c.agent_name}: Score {c.kpis.score:.1f}, Violations {len(c.violations)}, Setup {c.kpis.total_setup_time}m, Tardiness {c.kpis.total_tardiness}m" 
+                for c in candidates
+            ])
+            
+            # Supervisor System Prompt from Architecture Doc
             prompt = ChatPromptTemplate.from_template(
                 """
-                You are a Pharmaceutical Production Supervisor.
-                We compared 3 scheduling strategies for pharmaceutical manufacturing:
+                You are the **Supervisor Agent** for a Pharmaceutical Production Facility.
+                Your role is to coordinate specialist agents and select the best schedule for the plant managers.
+                
+                **Candidates Evaluated:**
                 {summary}
                 
-                The winner is {winner}.
-                Explain why this strategy was chosen over the others for pharmaceutical production optimization. Be concise and focus on production efficiency.
+                **Selected Winner:** {winner} (Reason: Highest Efficiency Score & Lowest Constraint Violations)
+                
+                **Your Task:**
+                Generate a clear, executive-level explanation for why this schedule was chosen.
+                
+                **Guidelines:**
+                1. Start with "As the Supervisor Agent, I have selected..."
+                2. Highlight the key benefits (e.g., "Reduced setup time by...", "Zero compliance violations").
+                3. Explain why the others were rejected (e.g., "Batching Agent had fewer setups but missed deadlines").
+                4. Maintain a professional, reassuring tone ensuring production goals are met.
+                5. Mention if any critical constraints (like rush orders or downtime) were handled effectively.
+                
+                Keep it under 200 words.
                 """
             )
             chain = prompt | self.llm
@@ -114,4 +138,5 @@ class OrchestratorAgent(BaseAgent):
             })
             return res.content
         except Exception as e:
-            return "Orchestrator selected the strategy with highest score and fewest violations."
+            return f"Supervisor Selection: {best.agent_name} was chosen based on the highest weighted score ({best.kpis.score:.2f}) and lowest violations ({len(best.violations)})."
+
